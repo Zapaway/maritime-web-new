@@ -1,10 +1,14 @@
+import { useState } from "react";
 import "./App.css";
-import Globe from "react-globe.gl";
+import { MaritimeGlobe, type MaritimeGlobeMode} from "./components/MaritimeGlobe";
+
 
 function App() {
+  const [globeMode, setGlobeMode] = useState<MaritimeGlobeMode>("ships");
+
   return (
     <main>
-      <Globe globeImageUrl="//unpkg.com/three-globe/example/img/earth-day.jpg"/>
+      <MaritimeGlobe mode={globeMode} />
     </main>
   );
 }

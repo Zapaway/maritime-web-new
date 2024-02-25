@@ -1,33 +1,55 @@
-import { MutableRefObject, useEffect, useRef, useState } from "react";
-import Globe, { GlobeMethods, GlobeProps } from "react-globe.gl";
-import { FormattedShipPoint, MaritimeGlobeMode } from "./types";
+import { useEffect, useRef, useState } from "react";
+import Globe, { GlobeMethods } from "react-globe.gl";
+import {
+  MaritimeGlobeMode,
+  PlottableMicroplasticPoint,
+} from "./types";
+import { getPoints } from "./getPoints";
 
-const point = { lat: 42.360081, lng: -71.058884, color: "#ffffff", radius: 10 };
-const point2 = { lat: 9.077751, lng: 8.6774567, color: "yellow", radius: 1 };
 
-export const MaritimeGlobe = ({ mode }: { mode: MaritimeGlobeMode }) => {
-  const [points, setPoints] = useState<FormattedShipPoint[]>([]);
-  const [currentPoint, setCurrentPoint] = useState<HTMLCanvasElement | null>();
+export const MaritimeGlobe = ({
+  mode,
+  // year,
+}: {
+  mode: MaritimeGlobeMode;
+  // year: string;
+}) => {
+  const [points, setPoints] = useState<PlottableMicroplasticPoint[]>([]);
+  const [currentPoint, setCurrentPoint] =
+    useState<PlottableMicroplasticPoint | null>();
   const globeContainer = useRef<GlobeMethods | undefined>();
+
+  useEffect(() => {
+    (async () => {
+      const csvPoints = await getPoints();
+      setPoints(csvPoints);
+    })();
+  }, []);
 
   // switch modes
   useEffect(() => {
     if (mode === "ships") {
-      setPoints([point, point2]);
+      // parse csv here
+      (async () => {
+        const csvPoints = await getPoints();
+        setPoints(csvPoints);
+      })();
+
+      return () => setPoints([]);
     }
   }, [mode]);
 
-  // track current point clicked on
-  useEffect(() => {
-    if (!currentPoint) return;
+  // // track current point clicked on
+  // useEffect(() => {
+  //   if (!currentPoint) return;
 
-    const observer = new MutationObserver((mutationList, observer) => {
-      console.log(mutationList)
-    });
-    observer.observe(currentPoint, { attributes: true, subtree: true })
+  //   const observer = new MutationObserver((mutationList, observer) => {
+  //     console.log(mutationList)
+  //   });
+  //   observer.observe(currentPoint, { attributes: true, subtree: true })
 
-    return () => observer.disconnect();
-  }, [currentPoint])
+  //   return () => observer.disconnect();
+  // }, [currentPoint])
 
   // allow auto-rotation
   useEffect(() => {
@@ -35,29 +57,57 @@ export const MaritimeGlobe = ({ mode }: { mode: MaritimeGlobeMode }) => {
       globeContainer.current.controls().autoRotate = true;
       globeContainer.current.controls().autoRotateSpeed = 0.25;
     }
-  }, [])
-
-  const transformShips = (rawPoint: {}) => {
-    return {} as FormattedShipPoint;
-  };
+  }, []);
 
   return (
-    <div>
+    <div className="relative w-full h-full">
+      <div
+        className={`absolute bottom-0 left-0 right-0 top-0 grid place-items-center text-white z-10 ${
+          currentPoint ? "visible" : "hidden"
+        }`}
+      >
+        {currentPoint && (
+          <div className="w-1/3 h-1/4 bg-white rounded-md text-black font-display relative">
+            <div className="flex flex-row justify-between p-4 items-end">
+              <p className="text-2xl font-semibold">{currentPoint["Oceans"]}</p>
+              <p>
+                {currentPoint["Latitude"]}°N, {currentPoint["Longitude"]}°W
+              </p>
+            </div>
+            <div className="space-y-2 px-4">
+              <p>This was discovered on {currentPoint["Date"]}.</p>
+              <p>
+                In this area, there is a{" "}
+                {currentPoint["Concentration Class"].toLowerCase()}{" "}
+                concentration of microplastics.
+              </p>
+              <p>
+                There are {currentPoint["Microplastics Measurement (density)"]}{" "}
+                microplastics per cubic meter.
+              </p>
+            </div>
+            <div className="absolute bottom-0 right-0 mx-2 my-2 px-4 py-2 bg-slate-300 rounded-md">
+              <button onClick={() => {setCurrentPoint(null)}}>Close</button>
+            </div>
+          </div>
+        )}
+      </div>
       <Globe
         globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
-        bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
+        // bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
         ref={globeContainer}
         pointsData={points}
         pointColor={"color"}
         pointRadius={"radius"}
-        onPointClick={(point, e, { lat, lng, alt }) => {
-          setCurrentPoint(e.target as HTMLCanvasElement);
+        pointAltitude={"height"}
+        onPointClick={(point, e) => {
+          setCurrentPoint(point as PlottableMicroplasticPoint);
+
           console.log(e.x, e.y);
         }}
       />
-      {/* { currentPoint && <div className="text-black">
-        {currentPoint.radius}
-        </div>} */}
     </div>
   );
 };
+
+

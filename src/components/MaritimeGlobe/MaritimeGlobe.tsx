@@ -67,7 +67,7 @@ export const MaritimeGlobe = ({
         }`}
       >
         {currentPoint && (
-          <div className="w-1/3 h-1/4 bg-white rounded-md text-black font-display relative">
+          <div className="w-full h-1/2 bg-white rounded-md text-black font-display relative">
             <div className="flex flex-row justify-between p-4 items-end">
               <p className="text-2xl font-semibold">{currentPoint["Oceans"]}</p>
               <p>
